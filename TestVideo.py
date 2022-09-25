@@ -35,7 +35,14 @@ def vMax (x):
 def getContours(img):
     contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     for cnt in contours:
-        cv2.drawContours(imgContour, cnt, -1, (255, 0, 0), 3)
+        M = cv2.moments(cnt) #achando o centro de cada robo
+        if M['m00'] != 0:
+            cx = int(M['m10']/M['m00'])
+            cy = int(M['m01']/M['m00'])
+            cv2.drawContours(imgContour, [cnt], -1, (0, 255, 0), 2)
+            cv2.circle(imgContour, (cx, cy), 7, (0, 0, 255), -1)
+        print(f"x: {cx} y: {cy}")
+    print()
 
 imgHSV = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
 imgContour = img.copy()
@@ -57,14 +64,14 @@ while True:
 
     mask = cv2.inRange(imgHSV,minimos,maximos)
     result = cv2.bitwise_and(img,img,mask=mask)
-    imgCanny = cv2.Canny(img, 150, 150)
+    imgCanny = cv2.Canny(result, 150, 150)
     imgCanny = cv2.dilate(imgCanny, kernel, iterations=1)
     getContours(imgCanny)
 
     stack = np.hstack((img,imgHSV,result))
 
     #cv2.imshow("Calibrating", stack)
-    cv2.imshow("Contours", imgContour)
+    cv2.imshow("Alou", imgContour)
     #cv2.imshow("Canny", imgCanny)
 
     #cv2.imshow("Mask",mask)
@@ -80,6 +87,7 @@ while True:
 
     if success:
         imgHSV = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+        imgContour = img.copy()
     
         minimos = np.array([m_min,s_min,v_min])
         maximos = np.array([m_max,s_max,v_max])
@@ -87,13 +95,13 @@ while True:
         mask = cv2.inRange(imgHSV,minimos,maximos)
         result = cv2.bitwise_and(img,img,mask=mask)
         
-        #imgCanny = cv2.Canny(img, 50, 50)
-        #getContours(imgCanny)
+        imgCanny = cv2.Canny(result, 150, 150)
+        imgCanny = cv2.dilate(imgCanny, kernel, iterations=1)
+        getContours(imgCanny)
 
         #cv2.imshow("Video", img)
-        cv2.imshow("Result", result)
-        #cv2.imshow("Countours", imgContour)
-        time.sleep(0.01);
+        #cv2.imshow("Result", result)
+        cv2.imshow("Countours", imgContour)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
