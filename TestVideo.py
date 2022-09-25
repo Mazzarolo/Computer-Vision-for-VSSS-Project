@@ -1,4 +1,5 @@
 from inspect import stack
+import math
 import time
 import cv2
 import numpy as np
@@ -8,6 +9,10 @@ path = "Resources/test.mp4"
 cap = cv2.VideoCapture(path)
 
 kernel = np.ones((5,5), np.uint8)
+
+positions = [(0, 0), (0, 0), (0, 0)]
+
+cTime = 0
 
 m_min = m_max = s_min = s_max = v_min = v_max = 0
 
@@ -32,8 +37,9 @@ def vMax (x):
     global v_max
     v_max = x
 
-def getContours(img):
+def getContours(img, cTime):
     contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    i = 0
     for cnt in contours:
         if cv2.contourArea(cnt) > 500:
             peri = cv2.arcLength(cnt,True)
@@ -41,9 +47,12 @@ def getContours(img):
             x, y, w, h = cv2.boundingRect(aprox)
             cx = int (x + w / 2)
             cy = int (y + h / 2)
+            speed = math.sqrt((cx - positions[i][0])**2 + (cy - positions[i][1])**2) # deslocamento
+            positions[i] = (cx, cy)
             cv2.rectangle(imgContour, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.circle(imgContour, (cx, cy), 7, (0, 0, 255), -1)
-            print(f"x: {cx} y: {cy}")
+            print(f"Robo {i} -> x: {cx} y: {cy} speed: {speed}")
+            i += 1
     print()
 
 imgHSV = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
@@ -66,14 +75,14 @@ while True:
 
     mask = cv2.inRange(imgHSV,minimos,maximos)
     result = cv2.bitwise_and(img,img,mask=mask)
-    imgCanny = cv2.Canny(result, 150, 150)
-    imgCanny = cv2.dilate(imgCanny, kernel, iterations=1)
-    getContours(imgCanny)
+    #imgCanny = cv2.Canny(result, 150, 150)
+    #imgCanny = cv2.dilate(imgCanny, kernel, iterations=1)
+    #getContours(imgCanny)
 
     stack = np.hstack((img,imgHSV,result))
 
-    #cv2.imshow("Calibrating", stack)
-    cv2.imshow("Alou", imgContour)
+    cv2.imshow("Calibrating", result)
+    #cv2.imshow("Alou", imgContour)
     #cv2.imshow("Canny", imgCanny)
 
     #cv2.imshow("Mask",mask)
@@ -99,7 +108,10 @@ while True:
         
         imgCanny = cv2.Canny(result, 150, 150)
         imgCanny = cv2.dilate(imgCanny, kernel, iterations=1)
-        getContours(imgCanny)
+
+        cTime = time.time() - cTime
+        getContours(imgCanny, cTime)
+        cTime = time.time()
 
         #cv2.imshow("Video", img)
         #cv2.imshow("Result", result)
