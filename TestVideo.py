@@ -35,13 +35,15 @@ def vMax (x):
 def getContours(img):
     contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     for cnt in contours:
-        M = cv2.moments(cnt) #achando o centro de cada robo
-        if M['m00'] != 0:
-            cx = int(M['m10']/M['m00'])
-            cy = int(M['m01']/M['m00'])
-            cv2.drawContours(imgContour, [cnt], -1, (0, 255, 0), 2)
+        if cv2.contourArea(cnt) > 500:
+            peri = cv2.arcLength(cnt,True)
+            aprox = cv2.approxPolyDP(cnt, 0.02*peri, True)
+            x, y, w, h = cv2.boundingRect(aprox)
+            cx = int (x + w / 2)
+            cy = int (y + h / 2)
+            cv2.rectangle(imgContour, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.circle(imgContour, (cx, cy), 7, (0, 0, 255), -1)
-        print(f"x: {cx} y: {cy}")
+            print(f"x: {cx} y: {cy}")
     print()
 
 imgHSV = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
